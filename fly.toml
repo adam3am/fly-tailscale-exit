@@ -6,7 +6,7 @@
 app = "tailscale-sin"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
-primary_region = "nrt"
+primary_region = "sea"
 
 [env]
 PORT = "41641"
