@@ -17,8 +17,8 @@ ip6tables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
     --verbose=1 \
     --port 41641 \
     --state=mem: & # emphemeral-node mode (auto-remove)
-    #--tun=userspace-networking
-    #--socks5-server=localhost:1055
+    --tun=userspace-networking
+    --socks5-server=localhost:1055
 
 /app/tailscale up \
     --authkey=${TAILSCALE_AUTH_KEY} \
