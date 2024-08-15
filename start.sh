@@ -13,18 +13,40 @@ sysctl -p /etc/sysctl.conf
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 ip6tables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
-/app/tailscaled \
-    --verbose=1 \
-    --port 41641 \
-    --state=mem: & # emphemeral-node mode (auto-remove)
-    --tun=userspace-networking
-    --socks5-server=localhost:1055
+/app/tailscaled --verbose=1 --port 41641 --socks5-server=localhost:3215 --tun=userspace-networking &
+sleep 5
+if [ ! -S /var/run/tailscale/tailscaled.sock ]; then
+    echo "tailscaled.sock does not exist. exit!"
+    exit 1
+fi
 
-/app/tailscale up \
+until /app/tailscale up \
     --authkey=${TAILSCALE_AUTH_KEY} \
-    --hostname=fly-${FLY_REGION} \
-    --advertise-exit-node #\
-    #--advertise-tags=tag:fly-exit # requires ACL tagOwners
+    --hostname=ntrance-${FLY_REGION} \
+    --advertise-exit-node \
+    --ssh
+do
+    sleep 0.1
+done
 
-echo "Tailscale started. Let's go!"
+echo 'Tailscale started'
+
+echo 'Starting Squid...'
+
+#squid &
+
+echo 'Squid started'
+
+echo 'Starting Dante...'
+
+#sockd &
+
+echo 'Dante started'
+
+echo 'Starting dnsmasq...'
+
+#dnsmasq &
+
+echo 'dnsmasq started'
+
 sleep infinity

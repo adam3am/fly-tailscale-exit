@@ -1,7 +1,7 @@
 ARG TSVERSION=1.70.0
 ARG TSFILE=tailscale_${TSVERSION}_amd64.tgz
 
-FROM alpine:latest as tailscale
+FROM alpine:latest as build
 ARG TSFILE
 WORKDIR /app
 
@@ -9,26 +9,33 @@ RUN wget https://pkgs.tailscale.com/stable/${TSFILE} && \
   tar xzf ${TSFILE} --strip-components=1
 COPY . ./
 
-
 FROM alpine:latest
-# alpine:3.19 links iptables to iptables-nft https://gitlab.alpinelinux.org/alpine/aports/-/commit/f87a191922955bcf5c5f3fc66a425263a4588d48.
-# iptables-nft requires kernel support for nft, which is currently not available in Fly.io,
-# so we remove the links and ensure that the iptables-legacy version is used.
-RUN apk update && apk add ca-certificates iptables iptables-legacy ip6tables  \
-  && rm -rf /var/cache/apk/* \
-  && rm /sbin/iptables && ln -s /sbin/iptables-legacy /sbin/iptables  \
-  && rm /sbin/ip6tables && ln -s /sbin/ip6tables-legacy /sbin/ip6tables
-
-
-# creating directories for tailscale
-RUN mkdir -p /var/run/tailscale
-RUN mkdir -p /var/cache/tailscale
-RUN mkdir -p /var/lib/tailscale
+RUN apk update \
+  && apk add --no-cache \
+  ca-certificates \
+  iptables \
+  ip6tables \
+  iproute2 \
+  squid \
+  dante-server \
+  python3 \
+  dnsmasq \
+  && rm -rf /var/cache/apk/*
+RUN mkdir -p \
+  /var/run/tailscale \
+  /var/cache/tailscale \
+  /var/lib/tailscale \
+  /etc/squid/
 
 # Copy binary to production image
-COPY --from=tailscale /app/tailscaled /app/tailscaled
-COPY --from=tailscale /app/tailscale /app/tailscale
-COPY --from=tailscale /app/start.sh /app/start.sh
+COPY --from=build /app/start.sh /app/start.sh
+COPY --from=build /app/my-app /app/my-app
+COPY --from=build /app/tailscaled /app/tailscaled
+COPY --from=build /app/tailscale /app/tailscale
+COPY --from=build /app/motd /etc/motd
+COPY --from=build /app/sockd.conf /etc/sockd.conf
+COPY --from=build /app/squid.conf /etc/squid/squid.conf
+COPY --from=build /app/dnsmasq.conf /etc/dnsmasq.conf
 
 # Run on container startup.
 USER root
