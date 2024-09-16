@@ -7,6 +7,7 @@ app = "tailscale-sin"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
 primary_region = "sea"
+swap_size_mb = 512
 
 [env]
 PORT = "41641"

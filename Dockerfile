@@ -25,7 +25,8 @@ RUN mkdir -p \
   /var/run/tailscale \
   /var/cache/tailscale \
   /var/lib/tailscale \
-  /etc/squid/
+  /etc/squid/ \
+  /.fly
 
 # Copy binary to production image
 COPY --from=build /app/start.sh /app/start.sh

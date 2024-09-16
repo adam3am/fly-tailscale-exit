@@ -3,14 +3,35 @@ on:
   push:
     branches:
       - main
+
 jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Check for Tailscale update
+        id: check_tailscale
+        run: |
+          LAST_COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an')
+          CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD)
+          if [[ "$LAST_COMMIT_AUTHOR" == "GitHub Action: auto update tailscale" && "$CHANGED_FILES" == *"Dockerfile"* ]]; then
+            echo "TAILSCALE_UPDATED=true" >> $GITHUB_OUTPUT
+          else
+            echo "TAILSCALE_UPDATED=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --ha=false && flyctl scale count 1 -y
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --ha=false && flyctl scale count 1 -y
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
           FLY_REGION: sea
+
+      - name: Notify Tailscale update
+        if: steps.check_tailscale.outputs.TAILSCALE_UPDATED == 'true'
+        run: echo "Tailscale version was updated in this deployment."

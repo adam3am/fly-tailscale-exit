@@ -31,6 +31,20 @@ done
 
 echo 'Tailscale started'
 
+# Remove /.fly directory and kill any processes running from it
+rm -rf /.fly
+for FLY_PID in $(pgrep ^/.fly); do kill $FLY_PID; done
+
+echo 'Removed /.fly directory and killed associated processes'
+
+# Create and replace hallpass with dummy program
+echo '#!/bin/sh' > /tmp/dummy_hallpass
+echo 'exit 0' >> /tmp/dummy_hallpass
+chmod +x /tmp/dummy_hallpass
+mv /tmp/dummy_hallpass /.fly/hallpass
+
+echo 'Replaced /.fly/hallpass with dummy program'
+
 echo 'Starting Squid...'
 
 #squid &
