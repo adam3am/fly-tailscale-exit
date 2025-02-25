@@ -1,0 +1,7 @@
+.DS_Store
+.python-version
+.node-version
+.tool-versions
+node_modules/
+ignore.yml
+.env
